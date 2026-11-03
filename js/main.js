@@ -359,6 +359,23 @@ formularioAcceso.addEventListener('submit', e => {
 });
 
 
+/* ---------------------------------------------------- */
+/* --// decoración animada de la pantalla de clave \\-- */
+/* ---------------------------------------------------- */
+
+/* Crea las partículas que suben por el fondo (cambia 18 por más o menos) */
+const decoracionClave = document.querySelector('.gate__decor');
+for (let i = 0; i < 18; i++) {
+    const particula = document.createElement('i');
+    particula.className = 'gate__particle';
+    particula.style.setProperty('--x', (Math.random() * 100) + '%'); /* posición horizontal */
+    particula.style.setProperty('--size', (2 + Math.random() * 3) + 'px'); /* tamaño */
+    particula.style.setProperty('--dur', (6 + Math.random() * 8) + 's'); /* velocidad */
+    particula.style.animationDelay = -(Math.random() * 10) + 's'; /* para que no salgan todas juntas */
+    decoracionClave.appendChild(particula);
+}
+
+
 /* ------------------------------------ */
 /* ----// CONEXIÓN CON SUPABASE \\----- */
 /* ------------------------------------ */

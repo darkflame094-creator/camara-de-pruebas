@@ -90,12 +90,25 @@
         <!-- ----------------------------- -->
 
         <div class="gate__decor" aria-hidden="true">
+            <div class="gate__wall"></div>
             <div class="gate__grid"></div>
-            <div class="gate__spin gate__spin--a"></div>
-            <div class="gate__spin gate__spin--b"></div>
+            <div class="gate__scan"></div>
+            <div class="loader__frame"></div>
+            <p class="gate__readout gate__readout--top">Sistema de acceso · en espera</p>
+            <p class="gate__readout gate__readout--bottom">Cámara sin verificar</p>
             <div class="gate__portal gate__portal--blue"></div>
             <div class="gate__portal gate__portal--orange"></div>
-            <div class="gate__orb"></div>
+
+            <!-- ----------------------------------------------- -->
+            <!-- --// cosas que cruzan de un portal al otro \\-- -->
+            <!-- ----------------------------------------------- -->
+
+            <div class="gate__thing gate__thing--sphere"></div>
+            <div class="gate__thing gate__thing--cube"></div>
+            <div class="gate__thing gate__thing--tri"></div>
+            <div class="gate__thing gate__thing--man">
+                <svg viewBox="0 0 24 40"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="7" r="5"/><path d="M12 12v14M12 16l-8 7M12 16l8 7M12 26l-7 12M12 26l7 12"/></g></svg>
+            </div>
         </div>
 
         <!-- --------------------------- -->
