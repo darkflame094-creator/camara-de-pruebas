@@ -9,6 +9,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cámara de pruebas</title> <!-- nombre que sale en la pestaña del navegador -->
+    <!-- ------------------------------------------------------------------------------------------ -->
+    <!-- --// comprobar si ya hay acceso (se hace aquí para que la clave salga antes que nada) \\-- -->
+    <!-- ------------------------------------------------------------------------------------------ -->
+
+    <script>
+        try { if (sessionStorage.getItem('acceso') !== 'ok') document.documentElement.classList.add('is-locked'); }
+        catch (e) { document.documentElement.classList.add('is-locked'); }
+    </script>
+
+    <!-- --------------------------------- -->
+    <!-- --// tipos de letra y diseño \\-- -->
+    <!-- --------------------------------- -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com"> <!-- tipos de letra de Google Fonts (necesitan internet) -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -71,6 +84,24 @@
 
     <!-- Pantalla de clave. Tapa toda la web hasta que se escribe la clave correcta -->
     <div class="gate" id="gate">
+
+        <!-- ----------------------------- -->
+        <!-- --// decoración de fondo \\-- -->
+        <!-- ----------------------------- -->
+
+        <div class="gate__decor" aria-hidden="true">
+            <div class="gate__grid"></div>
+            <div class="gate__spin gate__spin--a"></div>
+            <div class="gate__spin gate__spin--b"></div>
+            <div class="gate__portal gate__portal--blue"></div>
+            <div class="gate__portal gate__portal--orange"></div>
+            <div class="gate__orb"></div>
+        </div>
+
+        <!-- --------------------------- -->
+        <!-- --// panel de la clave \\-- -->
+        <!-- --------------------------- -->
+
         <form class="gate__panel" id="gate-form" autocomplete="off">
             <div class="gate__logo"><span class="dot dot--blue"></span><span class="dot dot--orange"></span></div>
             <h2 class="gate__title">Acceso restringido</h2>

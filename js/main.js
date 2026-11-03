@@ -49,10 +49,10 @@ let seccionActual = secciones[0];
 /* Lo que dice la pantalla de carga de cada sección. Para añadir una sección nueva,
    copia un bloque y usa el mismo nombre que le pusiste en data-target del menú */
 const CARGAS = {
-    inicio: { titulo: 'Inicio', lineas: ['Abriendo portales', 'Calibrando la cámara', 'Sistemas listos'] },
-    ideas: { titulo: 'Ideas', lineas: ['Reuniendo ideas', 'Ordenando experimentos', 'Cámara lista'] },
-    recuerdos: { titulo: 'Recuerdos', lineas: ['Abriendo el archivo', 'Revelando fotografías', 'Cámara lista'] },
-    creditos: { titulo: 'Créditos', lineas: ['Buscando al creador', 'Verificando firmas', 'Cámara lista'] }
+    inicio: { variante: 'normal', titulo: 'Inicio', lineas: ['Abriendo portales', 'Calibrando la cámara', 'Sistemas listos'] },
+    ideas: { variante: 'caida', titulo: 'Ideas', lineas: ['Reuniendo ideas', 'Ordenando experimentos', 'Cámara lista'] },
+    recuerdos: { variante: 'orbita', titulo: 'Recuerdos', lineas: ['Abriendo el archivo', 'Revelando fotografías', 'Cámara lista'] },
+    creditos: { variante: 'fusion', titulo: 'Créditos', lineas: ['Buscando al creador', 'Verificando firmas', 'Cámara lista'] }
 };
 
 const TIEMPO_PRIMERA_CARGA = 2600; /* milisegundos mínimos al entrar a la página */
@@ -78,6 +78,7 @@ function prepararCarga(id, duracion, esperarPagina) {
     const datos = CARGAS[id] || { titulo: id, lineas: ['Cargando'] };
     cargaCamara.textContent = 'Cámara ' + numeroDe(id);
     cargaTitulo.textContent = datos.titulo;
+    pantallaCarga.dataset.variante = datos.variante || 'normal'; /* decide qué diseño usa la carga */
 
     cargaLineas.innerHTML = '';
     datos.lineas.forEach((texto, i) => {
@@ -126,7 +127,7 @@ function terminarCarga() {
     setTimeout(() => {
         pantallaCarga.classList.add('is-hidden'); /* luego se quita del todo */
         cargando = false;
-        if (document.body.classList.contains('is-locked')) campoClave.focus(); /* si está bloqueada, deja listo el campo de clave */
+        if (document.documentElement.classList.contains('is-locked')) campoClave.focus(); /* si está bloqueada, deja listo el campo de clave */
     }, 1000);
 }
 
@@ -134,12 +135,23 @@ function terminarCarga() {
 /* --// primera carga de la página \\-- */
 /* ------------------------------------ */
 
-const inicioCarga = Date.now();
-window.addEventListener('load', () => {
-    carga.listo = true; /* la página ya cargó: la barra puede llegar al 100% */
+let inicioCarga = 0;
+
+function iniciarPrimeraCarga() {
+    cargando = true;
+    inicioCarga = Date.now();
+    pantallaCarga.classList.remove('is-done', 'is-hidden');
+    prepararCarga(seccionActual, TIEMPO_PRIMERA_CARGA, document.readyState !== 'complete');
+    if (document.readyState === 'complete') finalizarCuandoListo(); /* la página ya cargó (por ejemplo, después de la clave) */
+}
+
+function finalizarCuandoListo() {
+    carga.listo = true; /* la barra puede llegar al 100% */
     const faltante = Math.max(0, TIEMPO_PRIMERA_CARGA - (Date.now() - inicioCarga));
     setTimeout(terminarCarga, faltante);
-});
+}
+
+window.addEventListener('load', () => { if (carga.activa) finalizarCuandoListo(); }); /* la página terminó de cargar */
 
 
 /* -------------------------------------------- */
@@ -326,8 +338,9 @@ const CLAVE = 'proyecto2026'; /* la clave de acceso: cámbiala aquí */
 
 function desbloquear() {
     try { sessionStorage.setItem('acceso', 'ok'); } catch (e) {} /* recuerda el acceso hasta cerrar la pestaña */
-    document.body.classList.remove('is-locked');
+    document.documentElement.classList.remove('is-locked');
     campoClave.value = '';
+    iniciarPrimeraCarga(); /* ahora sí sale la pantalla de carga de la sección */
     revisarScroll();
     if (seccionActual === 'recuerdos') cargarGaleria();
 }
@@ -403,7 +416,7 @@ formularioSubida.addEventListener('submit', async e => {
         const ruta = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + extension;
 
         const subida = await cliente.storage.from(BUCKET).upload(ruta, archivo, { contentType: archivo.type });
-        if (subida.error) throw subida.error;
+        if (subida.error) throw new Error('Almacenamiento: ' + subida.error.message);
 
         const url = cliente.storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl;
         const registro = await cliente.from(TABLA).insert({
@@ -412,7 +425,7 @@ formularioSubida.addEventListener('submit', async e => {
             url_imagen: url,
             ruta: ruta
         });
-        if (registro.error) throw registro.error;
+        if (registro.error) throw new Error('Tabla: ' + registro.error.message);
 
         formularioSubida.reset();
         vistaPrevia.hidden = true;
@@ -432,7 +445,7 @@ formularioSubida.addEventListener('submit', async e => {
 /* ---------------------------- */
 
 async function cargarGaleria() {
-    if (document.body.classList.contains('is-locked')) return; /* no carga nada mientras está bloqueada */
+    if (document.documentElement.classList.contains('is-locked')) return; /* no carga nada mientras está bloqueada */
     if (!cliente) { estadoGaleria.textContent = 'No se pudo conectar con Supabase.'; return; }
     estadoGaleria.textContent = 'Cargando recuerdos...';
 
@@ -480,10 +493,7 @@ async function cargarGaleria() {
 /* ----// ARRANQUE \\----- */
 /* ----------------------- */
 
-/* Si no se ha puesto la clave en esta pestaña, la web arranca bloqueada */
-let acceso = null;
-try { acceso = sessionStorage.getItem('acceso'); } catch (e) {}
-if (acceso !== 'ok') document.body.classList.add('is-locked');
+/* El bloqueo se decide en el <head> del index.html, antes de que se vea nada */
 
 /* Se crean las barritas del indicador del cuadro (una por sección) */
 secciones.forEach(() => pasosCuadro.appendChild(document.createElement('i')));
@@ -493,5 +503,9 @@ secciones.forEach(() => pasosCuadro.appendChild(document.createElement('i')));
 const hash = location.hash.slice(1);
 const inicial = secciones.includes(hash) ? hash : secciones[0];
 activarSeccion(inicial);
-prepararCarga(inicial, TIEMPO_PRIMERA_CARGA, true);
+if (document.documentElement.classList.contains('is-locked')) {
+    campoClave.focus(); /* primero la clave; la pantalla de carga sale después de verificarla */
+} else {
+    iniciarPrimeraCarga(); /* si ya hay acceso en esta pestaña, va directo a la carga */
+}
 posicionarEncabezado();

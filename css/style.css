@@ -213,6 +213,58 @@ body {
     animation: orb 1.4s ease-in-out infinite alternate; /* va y vuelve entre los portales */
 }
 
+/* ---------------------------------------------------------------------- */
+/* --// variantes de la pantalla de carga (una distinta por sección) \\-- */
+/* ---------------------------------------------------------------------- */
+
+/* El JS pone data-variante en la pantalla de carga según la sección. "normal" es la de Inicio */
+
+.loader[data-variante="caida"] .loader__portals { /* Ideas: un portal arriba, otro abajo, y la esfera cae */
+    flex-direction: column;
+    gap: 2.8rem;
+}
+
+.loader[data-variante="caida"] .loader__ring {
+    width: 130px;
+    height: 54px;
+}
+
+.loader[data-variante="caida"] .loader__orb {
+    left: 50%;
+    top: 0;
+    margin: -9px 0 0 -9px;
+    animation: orb-fall 1.4s ease-in-out infinite;
+}
+
+.loader[data-variante="orbita"] .loader__portals { /* Recuerdos: los portales giran como un remolino */
+    animation: spin 6s linear infinite;
+}
+
+.loader[data-variante="orbita"].is-done .loader__portals {
+    animation: none; /* al terminar deja de girar y se agranda */
+}
+
+.loader[data-variante="fusion"] .loader__portals { /* Créditos: los portales se cruzan, como el emblema del encabezado */
+    gap: 0;
+}
+
+.loader[data-variante="fusion"] .loader__ring--orange {
+    margin-left: -40px;
+}
+
+.loader[data-variante="fusion"] .loader__orb {
+    display: none;
+}
+
+.loader[data-variante="fusion"] .loader__portals::after { /* anillo punteado que gira alrededor */
+    content: "";
+    position: absolute;
+    inset: -40px -50px;
+    border-radius: 50%;
+    border: 2px dashed var(--plat-3);
+    animation: spin 8s linear infinite;
+}
+
 /* ---------------------------- */
 /* --// mensajes de estado \\-- */
 /* ---------------------------- */
@@ -285,6 +337,17 @@ body {
 @keyframes portal-open {
     from { transform: scale(.1, 0); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes orb-fall {
+    0% { transform: translateY(27px) scale(.1); opacity: 0; }
+    20% { transform: translateY(50px) scale(1); opacity: 1; }
+    80% { transform: translateY(105px) scale(1); opacity: 1; }
+    100% { transform: translateY(126px) scale(.1); opacity: 0; }
 }
 
 @keyframes breathe {
@@ -996,15 +1059,121 @@ p {
     background: radial-gradient(ellipse at center, var(--chamber), var(--base) 75%);
 }
 
-body.is-locked .gate {
+html.is-locked .gate {
     display: flex;
 }
 
-body.is-locked .topbar,
-body.is-locked .sidebar,
-body.is-locked .stage,
-body.is-locked .backdrop {
+html.is-locked .loader {
+    display: none; /* la pantalla de carga no sale hasta que se escribe la clave */
+}
+
+html.is-locked .topbar,
+html.is-locked .sidebar,
+html.is-locked .stage,
+html.is-locked .backdrop {
     visibility: hidden; /* mientras está bloqueada, el contenido no se ve ni se puede tocar */
+}
+
+/* --------------------------------------- */
+/* --// decoración de fondo (animada) \\-- */
+/* --------------------------------------- */
+
+.gate__decor {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.gate__grid { /* suelo de cuadrícula que avanza hacia ti, como el piso de una cámara de pruebas */
+    position: absolute;
+    left: -50%;
+    right: -50%;
+    bottom: 0;
+    height: 60%;
+    background-image:
+        linear-gradient(rgba(42, 167, 255, .35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(42, 167, 255, .35) 1px, transparent 1px);
+    background-size: 60px 60px;
+    transform: perspective(500px) rotateX(62deg);
+    transform-origin: bottom;
+    -webkit-mask-image: linear-gradient(to top, #000, transparent 85%);
+    mask-image: linear-gradient(to top, #000, transparent 85%);
+    animation: grid-move 3s linear infinite;
+}
+
+.gate__spin { /* anillos de líneas punteadas que giran despacio */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    border: 2px dashed rgba(185, 194, 204, .25);
+    animation: spin 60s linear infinite;
+}
+
+.gate__spin--a {
+    width: 80vmin;
+    height: 80vmin;
+    margin: -40vmin 0 0 -40vmin;
+}
+
+.gate__spin--b {
+    width: 55vmin;
+    height: 55vmin;
+    margin: -27.5vmin 0 0 -27.5vmin;
+    border-color: rgba(255, 138, 31, .3);
+    animation-duration: 40s;
+    animation-direction: reverse;
+}
+
+.gate__portal { /* un portal a cada lado de la pantalla */
+    position: absolute;
+    top: 50%;
+    width: 14vmin;
+    height: 34vmin;
+    margin-top: -17vmin;
+    border-radius: 50%;
+    border: 1.2vmin solid;
+    animation: breathe 2.6s ease-in-out infinite;
+}
+
+.gate__portal--blue {
+    left: 3vw;
+    border-color: var(--blue);
+    box-shadow: 0 0 40px var(--blue), inset 0 0 30px var(--blue);
+}
+
+.gate__portal--orange {
+    right: 3vw;
+    border-color: var(--orange);
+    box-shadow: 0 0 40px var(--orange), inset 0 0 30px var(--orange);
+    animation-delay: 1.3s;
+}
+
+.gate__orb { /* esfera que cruza de un portal al otro cada pocos segundos */
+    position: absolute;
+    top: 50%;
+    left: calc(3vw + 7vmin);
+    width: 3vmin;
+    height: 3vmin;
+    margin: -1.5vmin 0 0 -1.5vmin;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff, var(--plat-2) 60%, var(--plat-3));
+    box-shadow: 0 0 16px #fff;
+    opacity: 0;
+    animation: orb-cross 8s ease-in-out infinite;
+}
+
+@keyframes grid-move {
+    to { background-position: 0 60px; }
+}
+
+@keyframes orb-cross {
+    0% { transform: translate(0, 0) scale(.1); opacity: 0; }
+    8% { transform: translate(calc((94vw - 14vmin) * .08), -12vh) scale(1); opacity: 1; }
+    30% { transform: translate(calc((94vw - 14vmin) * .5), -24vh) scale(1); opacity: 1; }
+    52% { transform: translate(calc((94vw - 14vmin) * .92), -12vh) scale(1); opacity: 1; }
+    60%, 100% { transform: translate(calc(94vw - 14vmin), 0) scale(.1); opacity: 0; }
 }
 
 /* --------------------------- */
@@ -1012,6 +1181,8 @@ body.is-locked .backdrop {
 /* --------------------------- */
 
 .gate__panel {
+    position: relative;
+    z-index: 1; /* por encima de la decoración de fondo */
     width: min(380px, 100%);
     display: flex;
     flex-direction: column;
