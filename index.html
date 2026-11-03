@@ -65,6 +65,23 @@
     </div>
 
 
+    <!-- ----------------------------- -->
+    <!-- ----// ACCESO PRIVADO \\----- -->
+    <!-- ----------------------------- -->
+
+    <!-- Pantalla de clave. Tapa toda la web hasta que se escribe la clave correcta -->
+    <div class="gate" id="gate">
+        <form class="gate__panel" id="gate-form" autocomplete="off">
+            <div class="gate__logo"><span class="dot dot--blue"></span><span class="dot dot--orange"></span></div>
+            <h2 class="gate__title">Acceso restringido</h2>
+            <p class="gate__text">Escribe la clave para entrar a la cámara.</p>
+            <input class="field" type="password" id="gate-input" placeholder="Clave" aria-label="Clave de acceso">
+            <button class="btn" type="submit">Entrar</button>
+            <p class="gate__error" id="gate-error" role="alert"></p>
+        </form>
+    </div>
+
+
     <!-- ------------------------- -->
     <!-- ----// ENCABEZADO \\----- -->
     <!-- ------------------------- -->
@@ -155,6 +172,10 @@
             <span class="nav-btn__ring"></span>
             <span class="nav-btn__text"><strong>Ideas</strong><small>lo que probamos</small></span>
         </button>
+        <button class="nav-btn" data-target="recuerdos" data-label="Recuerdos">
+            <span class="nav-btn__ring"></span>
+            <span class="nav-btn__text"><strong>Recuerdos</strong><small>fotos compartidas</small></span>
+        </button>
         <button class="nav-btn" data-target="creditos" data-label="Créditos">
             <span class="nav-btn__ring"></span>
             <span class="nav-btn__text"><strong>Créditos</strong><small>quién lo hizo</small></span>
@@ -192,6 +213,39 @@
             <p>Aquí irán las ideas que vayamos definiendo.</p>
         </section>
 
+        <!-- ---------------------------- -->
+        <!-- --// sección: Recuerdos \\-- -->
+        <!-- ---------------------------- -->
+
+        <section class="panel" id="recuerdos">
+            <h2>Recuerdos</h2>
+            <p>Sube una fotografía de recuerdo y aparecerá en la galería para todos.</p>
+
+            <!-- ---------------------------------------- -->
+            <!-- --// formulario para subir una foto \\-- -->
+            <!-- ---------------------------------------- -->
+
+            <form class="upload" id="upload-form" autocomplete="off">
+                <input class="visually-hidden" type="file" id="foto-input" accept="image/*">
+                <label class="drop" for="foto-input">
+                    <img class="drop__preview" id="foto-preview" alt="Vista previa de la foto" hidden>
+                    <span id="drop-text">Toca para elegir una foto</span>
+                </label>
+                <input class="field" type="text" id="autor-input" maxlength="60" placeholder="Tu nombre (opcional)" aria-label="Tu nombre">
+                <textarea class="field" id="desc-input" maxlength="300" rows="3" placeholder="Descripción (opcional)" aria-label="Descripción"></textarea>
+                <button class="btn" type="submit" id="subir-btn">Subir recuerdo</button>
+                <p class="status" id="subida-estado" role="status"></p>
+            </form>
+
+            <!-- -------------------------- -->
+            <!-- --// galería de fotos \\-- -->
+            <!-- -------------------------- -->
+
+            <h3 class="subtitle">Galería</h3>
+            <p class="status" id="galeria-estado" role="status"></p>
+            <div class="gallery" id="galeria"></div>
+        </section>
+
         <!-- --------------------------- -->
         <!-- --// sección: Créditos \\-- -->
         <!-- --------------------------- -->
@@ -208,6 +262,7 @@
     <!-- ----// SCRIPT \\----- -->
     <!-- --------------------- -->
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> <!-- librería oficial de Supabase (necesita internet) -->
     <script src="js/main.js"></script> <!-- aquí se conecta el comportamiento -->
 
 </body>

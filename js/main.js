@@ -22,6 +22,20 @@ const cargaPorcentaje = document.getElementById('loader-pct');
 const portales = document.getElementById('portals');
 const portalAzul = document.getElementById('portal-azul');
 const portalNaranja = document.getElementById('portal-naranja');
+const formularioAcceso = document.getElementById('gate-form');
+const panelAcceso = document.getElementById('gate-form');
+const campoClave = document.getElementById('gate-input');
+const textoError = document.getElementById('gate-error');
+const formularioSubida = document.getElementById('upload-form');
+const campoFoto = document.getElementById('foto-input');
+const vistaPrevia = document.getElementById('foto-preview');
+const textoDrop = document.getElementById('drop-text');
+const campoAutor = document.getElementById('autor-input');
+const campoDescripcion = document.getElementById('desc-input');
+const botonSubir = document.getElementById('subir-btn');
+const estadoSubida = document.getElementById('subida-estado');
+const galeria = document.getElementById('galeria');
+const estadoGaleria = document.getElementById('galeria-estado');
 
 /* Lista de secciones, en el mismo orden que los botones del menú */
 const secciones = Array.from(botones).map(b => b.dataset.target);
@@ -37,6 +51,7 @@ let seccionActual = secciones[0];
 const CARGAS = {
     inicio: { titulo: 'Inicio', lineas: ['Abriendo portales', 'Calibrando la cámara', 'Sistemas listos'] },
     ideas: { titulo: 'Ideas', lineas: ['Reuniendo ideas', 'Ordenando experimentos', 'Cámara lista'] },
+    recuerdos: { titulo: 'Recuerdos', lineas: ['Abriendo el archivo', 'Revelando fotografías', 'Cámara lista'] },
     creditos: { titulo: 'Créditos', lineas: ['Buscando al creador', 'Verificando firmas', 'Cámara lista'] }
 };
 
@@ -49,7 +64,7 @@ const TIEMPO_CAMBIO = 1600; /* milisegundos al cambiar de sección */
 /* -------------------------------- */
 
 let cargando = true; /* mientras sea true no se puede cambiar de sección */
-const carga = { inicio: 0, duracion: 3, listo: true, activa: false }; /* estado del avance de la carga */
+const carga = { inicio: 0, duracion: 1, listo: true, activa: false }; /* estado del avance de la carga */
 
 function numeroDe(id) {
     return String(secciones.indexOf(id) + 1).padStart(2, '0'); /* 1 -> "01" */
@@ -111,6 +126,7 @@ function terminarCarga() {
     setTimeout(() => {
         pantallaCarga.classList.add('is-hidden'); /* luego se quita del todo */
         cargando = false;
+        if (document.body.classList.contains('is-locked')) campoClave.focus(); /* si está bloqueada, deja listo el campo de clave */
     }, 1000);
 }
 
@@ -168,6 +184,7 @@ function activarSeccion(id) {
     animarCuadro();
     try { history.replaceState(null, '', '#' + id); } catch (e) {} /* guarda la sección en la dirección (#ideas) */
     revisarScroll(); /* el encabezado se ajusta a la nueva sección */
+    if (id === 'recuerdos') cargarGaleria(); /* al entrar a Recuerdos se actualiza la galería */
 }
 
 /* --------------------------------------------------- */
@@ -299,9 +316,174 @@ portalAzul.addEventListener('click', () => lanzarEsfera(portalAzul, portalNaranj
 portalNaranja.addEventListener('click', () => lanzarEsfera(portalNaranja, portalAzul));
 
 
+/* ------------------------------------- */
+/* ----// ACCESO PRIVADO (clave) \\----- */
+/* ------------------------------------- */
+
+/* AVISO: esta clave está escrita en el código, así que cualquiera que sepa abrir las herramientas
+   del navegador puede verla. Sirve como "cortina" para visitas casuales, no como seguridad real. */
+const CLAVE = 'proyecto2026'; /* la clave de acceso: cámbiala aquí */
+
+function desbloquear() {
+    try { sessionStorage.setItem('acceso', 'ok'); } catch (e) {} /* recuerda el acceso hasta cerrar la pestaña */
+    document.body.classList.remove('is-locked');
+    campoClave.value = '';
+    revisarScroll();
+    if (seccionActual === 'recuerdos') cargarGaleria();
+}
+
+formularioAcceso.addEventListener('submit', e => {
+    e.preventDefault();
+    if (campoClave.value === CLAVE) {
+        desbloquear();
+    } else {
+        textoError.textContent = 'Clave incorrecta. Inténtalo de nuevo.';
+        panelAcceso.classList.remove('is-shaking');
+        void panelAcceso.offsetWidth; /* truco para poder repetir la animación */
+        panelAcceso.classList.add('is-shaking');
+        campoClave.select();
+    }
+});
+
+
+/* ------------------------------------ */
+/* ----// CONEXIÓN CON SUPABASE \\----- */
+/* ------------------------------------ */
+
+const SUPABASE_URL = 'https://rxoytzliswfhwxskcioa.supabase.co';
+const SUPABASE_CLAVE = 'sb_publishable_Wv32QDV55TBVhq6u6jLraA_QaUUlig6'; /* clave "publishable": está pensada para ir en la página */
+const BUCKET = 'imagenes'; /* nombre del almacenamiento de fotos */
+const TABLA = 'fotos'; /* nombre de la tabla en Supabase */
+const MAX_MB = 5; /* tamaño máximo de cada foto */
+
+let cliente = null;
+try {
+    cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_CLAVE);
+} catch (error) {
+    console.error('No se pudo cargar Supabase:', error); /* por ejemplo, si no hay internet */
+}
+
+
+/* ----------------------------------- */
+/* ----// GALERÍA DE RECUERDOS \\----- */
+/* ----------------------------------- */
+
+function mostrarEstado(texto, esError) {
+    estadoSubida.textContent = texto;
+    estadoSubida.classList.toggle('is-error', !!esError);
+}
+
+/* ----------------------------------------- */
+/* --// vista previa de la foto elegida \\-- */
+/* ----------------------------------------- */
+
+campoFoto.addEventListener('change', () => {
+    const archivo = campoFoto.files[0];
+    vistaPrevia.hidden = !archivo;
+    if (archivo) vistaPrevia.src = URL.createObjectURL(archivo);
+    textoDrop.textContent = archivo ? archivo.name : 'Toca para elegir una foto';
+});
+
+/* --------------------------- */
+/* --// subir un recuerdo \\-- */
+/* --------------------------- */
+
+formularioSubida.addEventListener('submit', async e => {
+    e.preventDefault();
+    const archivo = campoFoto.files[0];
+    if (!cliente) return mostrarEstado('No se pudo conectar con Supabase.', true);
+    if (!archivo) return mostrarEstado('Elige una foto primero.', true);
+    if (!archivo.type.startsWith('image/')) return mostrarEstado('El archivo debe ser una imagen.', true);
+    if (archivo.size > MAX_MB * 1024 * 1024) return mostrarEstado('La foto pesa más de ' + MAX_MB + ' MB.', true);
+
+    botonSubir.disabled = true;
+    mostrarEstado('Subiendo...');
+    try {
+        const extension = (archivo.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const ruta = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + extension;
+
+        const subida = await cliente.storage.from(BUCKET).upload(ruta, archivo, { contentType: archivo.type });
+        if (subida.error) throw subida.error;
+
+        const url = cliente.storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl;
+        const registro = await cliente.from(TABLA).insert({
+            autor: campoAutor.value.trim() || null,
+            descripcion: campoDescripcion.value.trim() || null,
+            url_imagen: url,
+            ruta: ruta
+        });
+        if (registro.error) throw registro.error;
+
+        formularioSubida.reset();
+        vistaPrevia.hidden = true;
+        textoDrop.textContent = 'Toca para elegir una foto';
+        mostrarEstado('¡Recuerdo guardado!');
+        await cargarGaleria();
+    } catch (error) {
+        console.error(error);
+        mostrarEstado('No se pudo subir: ' + (error.message || 'error desconocido'), true);
+    } finally {
+        botonSubir.disabled = false;
+    }
+});
+
+/* ---------------------------- */
+/* --// mostrar la galería \\-- */
+/* ---------------------------- */
+
+async function cargarGaleria() {
+    if (document.body.classList.contains('is-locked')) return; /* no carga nada mientras está bloqueada */
+    if (!cliente) { estadoGaleria.textContent = 'No se pudo conectar con Supabase.'; return; }
+    estadoGaleria.textContent = 'Cargando recuerdos...';
+
+    const resultado = await cliente.from(TABLA)
+        .select('autor, descripcion, url_imagen')
+        .order('creado', { ascending: false })
+        .limit(60); /* muestra los 60 más recientes */
+    if (resultado.error) {
+        console.error(resultado.error);
+        estadoGaleria.textContent = 'No se pudo cargar la galería.';
+        return;
+    }
+
+    galeria.innerHTML = '';
+    estadoGaleria.textContent = resultado.data.length ? '' : 'Todavía no hay recuerdos. ¡Sube el primero!';
+    resultado.data.forEach(item => {
+        if (!item.url_imagen.startsWith(SUPABASE_URL)) return; /* solo fotos que estén en nuestro Supabase */
+        const tarjeta = document.createElement('figure');
+        tarjeta.className = 'card';
+
+        const imagen = document.createElement('img');
+        imagen.src = item.url_imagen;
+        imagen.loading = 'lazy';
+        imagen.alt = item.descripcion || 'Recuerdo subido por ' + (item.autor || 'alguien');
+
+        const pie = document.createElement('figcaption');
+        const autor = document.createElement('span');
+        autor.className = 'card__author';
+        autor.textContent = item.autor || 'Anónimo';
+        pie.appendChild(autor);
+        if (item.descripcion) {
+            const texto = document.createElement('p');
+            texto.className = 'card__text';
+            texto.textContent = item.descripcion;
+            pie.appendChild(texto);
+        }
+
+        tarjeta.append(imagen, pie);
+        galeria.appendChild(tarjeta);
+    });
+}
+
+
 /* ----------------------- */
 /* ----// ARRANQUE \\----- */
 /* ----------------------- */
+
+/* Si no se ha puesto la clave en esta pestaña, la web arranca bloqueada */
+let acceso = null;
+try { acceso = sessionStorage.getItem('acceso'); } catch (e) {}
+if (acceso !== 'ok') document.body.classList.add('is-locked');
 
 /* Se crean las barritas del indicador del cuadro (una por sección) */
 secciones.forEach(() => pasosCuadro.appendChild(document.createElement('i')));
