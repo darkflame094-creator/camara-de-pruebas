@@ -35,15 +35,14 @@
     <!-- ----// PANTALLA DE CARGA \\----- -->
     <!-- -------------------------------- -->
 
-    <!-- Se ve al entrar y al cambiar de sección. El JS rellena los textos según la sección -->
+    <!-- Se ve al entrar y al cambiar de sección. El JS arma el fondo y rellena los textos según la sección -->
     <div class="loader" id="loader" aria-hidden="true">
 
-        <!-- ----------------------------------------------- -->
-        <!-- --// decoración (marco y línea de escaneo) \\-- -->
-        <!-- ----------------------------------------------- -->
+        <!-- --------------------------------------- -->
+        <!-- --// fondo animado (lo arma el JS) \\-- -->
+        <!-- --------------------------------------- -->
 
-        <div class="loader__frame"></div>
-        <div class="loader__scan"></div>
+        <div class="gate__decor" id="loader-decor"></div>
 
         <!-- ---------------------------- -->
         <!-- --// título de la carga \\-- -->
@@ -51,16 +50,6 @@
 
         <p class="loader__camera" id="loader-camera"></p>
         <h2 class="loader__title" id="loader-title"></h2>
-
-        <!-- --------------------------- -->
-        <!-- --// portales y esfera \\-- -->
-        <!-- --------------------------- -->
-
-        <div class="loader__portals">
-            <span class="loader__ring loader__ring--blue"></span>
-            <span class="loader__orb"></span>
-            <span class="loader__ring loader__ring--orange"></span>
-        </div>
 
         <!-- ---------------------------- -->
         <!-- --// mensajes de estado \\-- -->
@@ -85,31 +74,11 @@
     <!-- Pantalla de clave. Tapa toda la web hasta que se escribe la clave correcta -->
     <div class="gate" id="gate">
 
-        <!-- ----------------------------- -->
-        <!-- --// decoración de fondo \\-- -->
-        <!-- ----------------------------- -->
+        <!-- --------------------------------------------- -->
+        <!-- --// decoración de fondo (la arma el JS) \\-- -->
+        <!-- --------------------------------------------- -->
 
-        <div class="gate__decor" aria-hidden="true">
-            <div class="gate__wall"></div>
-            <div class="gate__grid"></div>
-            <div class="gate__scan"></div>
-            <div class="loader__frame"></div>
-            <p class="gate__readout gate__readout--top">Sistema de acceso · en espera</p>
-            <p class="gate__readout gate__readout--bottom">Cámara sin verificar</p>
-            <div class="gate__portal gate__portal--blue"></div>
-            <div class="gate__portal gate__portal--orange"></div>
-
-            <!-- ----------------------------------------------- -->
-            <!-- --// cosas que cruzan de un portal al otro \\-- -->
-            <!-- ----------------------------------------------- -->
-
-            <div class="gate__thing gate__thing--sphere"></div>
-            <div class="gate__thing gate__thing--cube"></div>
-            <div class="gate__thing gate__thing--tri"></div>
-            <div class="gate__thing gate__thing--man">
-                <svg viewBox="0 0 24 40"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="7" r="5"/><path d="M12 12v14M12 16l-8 7M12 16l8 7M12 26l-7 12M12 26l7 12"/></g></svg>
-            </div>
-        </div>
+        <div class="gate__decor" id="gate-decor" aria-hidden="true"></div>
 
         <!-- --------------------------- -->
         <!-- --// panel de la clave \\-- -->
@@ -233,6 +202,12 @@
     <!-- ------------------------------------ -->
 
     <main class="stage">
+
+        <!-- -------------------------------------------------------- -->
+        <!-- --// fondo animado de las secciones (lo arma el JS) \\-- -->
+        <!-- -------------------------------------------------------- -->
+
+        <div class="stage-bg" id="stage-bg" data-seccion="inicio" aria-hidden="true"></div>
 
         <!-- ------------------------- -->
         <!-- --// sección: Inicio \\-- -->

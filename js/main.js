@@ -36,6 +36,9 @@ const botonSubir = document.getElementById('subir-btn');
 const estadoSubida = document.getElementById('subida-estado');
 const galeria = document.getElementById('galeria');
 const estadoGaleria = document.getElementById('galeria-estado');
+const escenaClave = document.getElementById('gate-decor');
+const escenaCarga = document.getElementById('loader-decor');
+const fondoSeccion = document.getElementById('stage-bg');
 
 /* Lista de secciones, en el mismo orden que los botones del menú */
 const secciones = Array.from(botones).map(b => b.dataset.target);
@@ -49,10 +52,10 @@ let seccionActual = secciones[0];
 /* Lo que dice la pantalla de carga de cada sección. Para añadir una sección nueva,
    copia un bloque y usa el mismo nombre que le pusiste en data-target del menú */
 const CARGAS = {
-    inicio: { variante: 'normal', titulo: 'Inicio', lineas: ['Abriendo portales', 'Calibrando la cámara', 'Sistemas listos'] },
-    ideas: { variante: 'caida', titulo: 'Ideas', lineas: ['Reuniendo ideas', 'Ordenando experimentos', 'Cámara lista'] },
-    recuerdos: { variante: 'orbita', titulo: 'Recuerdos', lineas: ['Abriendo el archivo', 'Revelando fotografías', 'Cámara lista'] },
-    creditos: { variante: 'fusion', titulo: 'Créditos', lineas: ['Buscando al creador', 'Verificando firmas', 'Cámara lista'] }
+    inicio: { variante: 'normal', titulo: 'Inicio', nota: 'Cámara de pruebas · en línea', lineas: ['Abriendo portales', 'Calibrando la cámara', 'Sistemas listos'] },
+    ideas: { variante: 'caida', titulo: 'Ideas', nota: 'Archivo de ideas · abierto', lineas: ['Reuniendo ideas', 'Ordenando experimentos', 'Cámara lista'] },
+    recuerdos: { variante: 'orbita', titulo: 'Recuerdos', nota: 'Álbum compartido · sincronizado', lineas: ['Abriendo el archivo', 'Revelando fotografías', 'Cámara lista'] },
+    creditos: { variante: 'fusion', titulo: 'Créditos', nota: 'Hecho con ♥ y mucha cuadrícula', lineas: ['Buscando al creador', 'Verificando firmas', 'Cámara lista'] }
 };
 
 const TIEMPO_PRIMERA_CARGA = 2600; /* milisegundos mínimos al entrar a la página */
@@ -79,6 +82,7 @@ function prepararCarga(id, duracion, esperarPagina) {
     cargaCamara.textContent = 'Cámara ' + numeroDe(id);
     cargaTitulo.textContent = datos.titulo;
     pantallaCarga.dataset.variante = datos.variante || 'normal'; /* decide qué diseño usa la carga */
+    ponerTextosEscena(escenaCarga, 'Cámara ' + numeroDe(id) + ' · cargando', datos.nota || '');
 
     cargaLineas.innerHTML = '';
     datos.lineas.forEach((texto, i) => {
@@ -192,6 +196,7 @@ function activarSeccion(id) {
         if (activo) etiqueta.textContent = b.dataset.label; /* nombre que sale en el cuadro del encabezado */
     });
     etiquetaCuadro.textContent = 'Cámara ' + numeroDe(id);
+    actualizarFondoSeccion(id); /* cambia el fondo animado de la sección */
     Array.from(pasosCuadro.children).forEach((paso, i) => paso.classList.toggle('is-on', secciones[i] === id));
     animarCuadro();
     try { history.replaceState(null, '', '#' + id); } catch (e) {} /* guarda la sección en la dirección (#ideas) */
@@ -328,6 +333,97 @@ portalAzul.addEventListener('click', () => lanzarEsfera(portalAzul, portalNaranj
 portalNaranja.addEventListener('click', () => lanzarEsfera(portalNaranja, portalAzul));
 
 
+/* ---------------------------------------- */
+/* ----// ESCENAS ANIMADAS DE FONDO \\----- */
+/* ---------------------------------------- */
+
+/* Aquí se arman los fondos animados. El mismo código sirve para la pantalla de clave,
+   las pantallas de carga y el fondo de las secciones. Qué objetos se ven en cada una
+   se decide en el CSS. */
+
+/* ---------------------------------------------------------------------- */
+/* --// dibujos de los objetos (monigote, corazón, bombilla y coche) \\-- */
+/* ---------------------------------------------------------------------- */
+
+const OBJETOS_SVG = {
+    hombre: '<svg viewBox="0 0 24 40"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="7" r="5"/><path d="M12 12v14M12 16l-8 7M12 16l8 7M12 26l-7 12M12 26l7 12"/></g></svg>',
+    corazon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-8-5.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.5-8 11-8 11z"/></svg>',
+    bombilla: '<svg viewBox="0 0 24 32"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a8 8 0 0 0-4.5 14.6c.9.7 1.5 1.7 1.5 2.9V21h6v-1.5c0-1.2.6-2.2 1.5-2.9A8 8 0 0 0 12 2z"/><path d="M9 25h6M10 29h4"/></g></svg>',
+    coche: '<svg viewBox="0 0 64 30"><path fill="currentColor" d="M4 20c0-3 1-5 4-6l8-1 7-8h18l8 8 9 1c3 .5 5 2 5 6v2H4z"/><path fill="#0f1b27" d="M25 8l-5 5h12V8zm10 0v5h12l-5-5z"/><g class="wheel"><circle cx="17" cy="23" r="6" fill="#0f1b27" stroke="currentColor" stroke-width="2"/><path d="M17 18v10M12 23h10" stroke="currentColor" stroke-width="1.5"/></g><g class="wheel"><circle cx="49" cy="23" r="6" fill="#0f1b27" stroke="currentColor" stroke-width="2"/><path d="M49 18v10M44 23h10" stroke="currentColor" stroke-width="1.5"/></g></svg>'
+};
+
+/* ------------------------------------------- */
+/* --// partículas que suben por el fondo \\-- */
+/* ------------------------------------------- */
+
+function crearParticulas(contenedor, cantidad) {
+    for (let i = 0; i < cantidad; i++) {
+        const particula = document.createElement('i');
+        particula.className = 'gate__particle';
+        particula.style.setProperty('--x', (Math.random() * 100) + '%'); /* posición horizontal */
+        particula.style.setProperty('--size', (2 + Math.random() * 3) + 'px'); /* tamaño */
+        particula.style.setProperty('--dur', (6 + Math.random() * 8) + 's'); /* velocidad */
+        particula.style.animationDelay = -(Math.random() * 10) + 's'; /* para que no salgan todas juntas */
+        contenedor.appendChild(particula);
+    }
+}
+
+/* ------------------------------------------------------ */
+/* --// escena completa (clave y pantallas de carga) \\-- */
+/* ------------------------------------------------------ */
+
+function crearEscena(contenedor) {
+    contenedor.innerHTML =
+        '<div class="gate__wall"></div>' +
+        '<div class="gate__grid"></div>' +
+        '<div class="gate__scan"></div>' +
+        '<div class="loader__frame"></div>' +
+        '<p class="gate__readout gate__readout--top"></p>' +
+        '<p class="gate__readout gate__readout--bottom"></p>' +
+        '<div class="gate__portal gate__portal--blue"></div>' +
+        '<div class="gate__portal gate__portal--orange"></div>' +
+        '<div class="gate__thing gate__thing--sphere"></div>' +
+        '<div class="gate__thing gate__thing--cube"></div>' +
+        '<div class="gate__thing gate__thing--tri"></div>' +
+        '<div class="gate__thing gate__thing--man">' + OBJETOS_SVG.hombre + '</div>' +
+        '<div class="gate__thing gate__thing--heart">' + OBJETOS_SVG.corazon + '</div>' +
+        '<div class="gate__thing gate__thing--bulb">' + OBJETOS_SVG.bombilla + '</div>' +
+        '<div class="gate__car">' + OBJETOS_SVG.coche + '</div>';
+    crearParticulas(contenedor, 18); /* cantidad de partículas */
+}
+
+/* ----------------------------------------------- */
+/* --// fondo de las secciones (más sencillo) \\-- */
+/* ----------------------------------------------- */
+
+function crearFondoSeccion(contenedor) {
+    contenedor.innerHTML =
+        '<div class="gate__grid"></div>' +
+        '<div class="stage-bg__edge stage-bg__edge--blue"></div>' +
+        '<div class="stage-bg__edge stage-bg__edge--orange"></div>' +
+        '<p class="gate__readout gate__readout--top"></p>' +
+        '<p class="gate__readout gate__readout--bottom"></p>' +
+        '<div class="gate__car">' + OBJETOS_SVG.coche + '</div>' +
+        '<div class="bg__walker">' + OBJETOS_SVG.hombre + '</div>';
+    crearParticulas(contenedor, 16);
+}
+
+/* ----------------------------------------- */
+/* --// textos de estado de las escenas \\-- */
+/* ----------------------------------------- */
+
+function ponerTextosEscena(contenedor, arriba, abajo) {
+    contenedor.querySelector('.gate__readout--top').textContent = arriba;
+    contenedor.querySelector('.gate__readout--bottom').textContent = abajo;
+}
+
+function actualizarFondoSeccion(id) {
+    const datos = CARGAS[id] || { titulo: id, nota: '' };
+    fondoSeccion.dataset.seccion = id; /* el CSS cambia colores, símbolos y easter eggs según la sección */
+    ponerTextosEscena(fondoSeccion, 'Cámara ' + numeroDe(id) + ' · ' + datos.titulo, datos.nota);
+}
+
+
 /* ------------------------------------- */
 /* ----// ACCESO PRIVADO (clave) \\----- */
 /* ------------------------------------- */
@@ -357,23 +453,6 @@ formularioAcceso.addEventListener('submit', e => {
         campoClave.select();
     }
 });
-
-
-/* ---------------------------------------------------- */
-/* --// decoración animada de la pantalla de clave \\-- */
-/* ---------------------------------------------------- */
-
-/* Crea las partículas que suben por el fondo (cambia 18 por más o menos) */
-const decoracionClave = document.querySelector('.gate__decor');
-for (let i = 0; i < 18; i++) {
-    const particula = document.createElement('i');
-    particula.className = 'gate__particle';
-    particula.style.setProperty('--x', (Math.random() * 100) + '%'); /* posición horizontal */
-    particula.style.setProperty('--size', (2 + Math.random() * 3) + 'px'); /* tamaño */
-    particula.style.setProperty('--dur', (6 + Math.random() * 8) + 's'); /* velocidad */
-    particula.style.animationDelay = -(Math.random() * 10) + 's'; /* para que no salgan todas juntas */
-    decoracionClave.appendChild(particula);
-}
 
 
 /* ------------------------------------ */
@@ -511,6 +590,12 @@ async function cargarGaleria() {
 /* ----------------------- */
 
 /* El bloqueo se decide en el <head> del index.html, antes de que se vea nada */
+
+/* Se arman las escenas animadas: la de la clave, la de las pantallas de carga y la del fondo de las secciones */
+crearEscena(escenaClave);
+ponerTextosEscena(escenaClave, 'Sistema de acceso · en espera', 'Cámara sin verificar');
+crearEscena(escenaCarga);
+crearFondoSeccion(fondoSeccion);
 
 /* Se crean las barritas del indicador del cuadro (una por sección) */
 secciones.forEach(() => pasosCuadro.appendChild(document.createElement('i')));
