@@ -1548,7 +1548,13 @@ html.is-locked .backdrop {
 /* --------------------------------------------- */
 
 .stage-bg {
-    --rejilla: rgba(42, 167, 255, .45); /* cuadrícula más visible que antes */
+    --rejilla: rgba(42, 167, 255, .45); /* color de la cuadrícula (Inicio) */
+    --az-x: 0%;
+    --az-y: calc(80% - 9.6vmin);
+    --az-rot: 0deg; /* portal azul: posición y giro */
+    --na-x: 100%;
+    --na-y: calc(80% - 9.6vmin);
+    --na-rot: 0deg; /* portal naranja: posición y giro */
     position: fixed; /* fijo como el encabezado */
     inset: 0; /* cubre toda la pantalla */
     overflow: hidden;
@@ -1556,69 +1562,169 @@ html.is-locked .backdrop {
     z-index: 0; /* debajo de los paneles de contenido */
 }
 
+
+    /* --------------------------------- */
+    /* --// colores de cada sección \\-- */
+    /* --------------------------------- */
+
     .stage-bg[data-seccion="ideas"] {
-        --rejilla: rgba(255, 138, 31, .45); /* naranja más visible en Ideas */
+        --rejilla: rgba(255, 138, 31, .45); /* naranja en Ideas */
     }
 
     .stage-bg[data-seccion="recuerdos"] {
-        --rejilla: rgba(185, 194, 204, .38); /* platinado más visible en Recuerdos */
+        --rejilla: rgba(185, 194, 204, .38); /* platinado en Recuerdos */
     }
 
 
-    /* ----------------------------------------------------------------- */
-    /* --// cuadrícula del suelo y portales asomando por los bordes \\-- */
-    /* ----------------------------------------------------------------- */
+    /* --------------------------------------------------- */
+    /* --// posición de los portales en cada sección \\-- */
+    /* --------------------------------------------------- */
 
-    .stage-bg .gate__grid {
-        height: 55%; /* más alto que antes para más presencia */
-        opacity: .75; /* más opaco que antes (.55) */
-        background-size: 50px 50px; /* celdas más pequeñas = cuadrícula más densa */
+    /* x e y son el centro del portal (en % de la pantalla); rot es cuánto está girado.
+   Inicio usa los valores de arriba (izquierda y derecha, verticales) */
+
+    .stage-bg[data-seccion="ideas"] {
+        --az-x: 22%;
+        --az-y: calc(var(--head-h) + 7vmin);
+        --az-rot: 90deg; /* azul arriba a la izquierda, acostado (debajo del encabezado) */
+        --na-x: 78%;
+        --na-y: 100%;
+        --na-rot: 90deg; /* naranja abajo a la derecha, acostado */
     }
+
+    .stage-bg[data-seccion="recuerdos"] {
+        --az-x: 0%;
+        --az-y: 78%;
+        --az-rot: 20deg; /* azul a la izquierda, abajo */
+        --na-x: 100%;
+        --na-y: 22%;
+        --na-rot: 20deg; /* naranja a la derecha, arriba */
+    }
+
+    .stage-bg[data-seccion="creditos"] {
+        --az-x: 5%;
+        --az-y: calc(var(--head-h) + 9vmin);
+        --az-rot: 45deg; /* azul arriba a la izquierda, inclinado */
+        --na-x: 95%;
+        --na-y: 100%;
+        --na-rot: 45deg; /* naranja abajo a la derecha, inclinado */
+    }
+
+
+    /* ----------------------------- */
+    /* --// suelo de cuadrícula \\-- */
+    /* ----------------------------- */
+
+    .stage-bg .gate__grid { /* el suelo con perspectiva viene de la pantalla de carga; aquí solo se ajusta */
+        opacity: .85; /* qué tan visible es */
+    }
+
+
+/* ------------------------------------ */
+/* --// portales de los bordes \\-- */
+/* ------------------------------------ */
 
 .stage-bg__edge {
     position: absolute;
-    top: 50%;
     width: 10vmin;
     height: 30vmin;
-    margin-top: -15vmin;
+    translate: -50% -50%; /* el centro del portal queda en el punto indicado */
     border-radius: 50%;
     border: 1vmin solid;
-    opacity: .3; /* levemente más visible que antes (.25) */
+    opacity: .4; /* qué tan visibles son */
+    outline: .3vmin dashed currentColor; /* aro punteado exterior */
+    outline-offset: 1.6vmin;
     animation: breathe 3s ease-in-out infinite;
 }
 
 .stage-bg__edge--blue {
-    left: -6vmin;
+    left: var(--az-x);
+    top: var(--az-y);
+    rotate: var(--az-rot);
+    color: var(--blue);
     border-color: var(--blue);
-    box-shadow: 0 0 30px var(--blue); /* halo más amplio */
+    background: radial-gradient(ellipse at center, rgba(42, 167, 255, .28), transparent 70%); /* luz interior */
+    box-shadow: 0 0 30px var(--blue), inset 0 0 20px var(--blue);
 }
 
 .stage-bg__edge--orange {
-    right: -6vmin;
+    left: var(--na-x);
+    top: var(--na-y);
+    rotate: var(--na-rot);
+    color: var(--orange);
     border-color: var(--orange);
-    box-shadow: 0 0 30px var(--orange);
+    background: radial-gradient(ellipse at center, rgba(255, 138, 31, .28), transparent 70%);
+    box-shadow: 0 0 30px var(--orange), inset 0 0 20px var(--orange);
     animation-delay: 1.5s;
 }
 
 
-/* ---------------------------------------------------------- */
-/* --// textos de estado: fijos arriba, no bajan con scroll */
-/* ---------------------------------------------------------- */
+/* ------------------------------------ */
+/* --// decoración de los portales \\-- */
+/* ------------------------------------ */
+
+.stage-bg__edge::before,
+.stage-bg__edge::after { /* ondas que se expanden desde el portal */
+    content: "";
+    position: absolute;
+    inset: -1vmin;
+    border-radius: 50%;
+    border: .35vmin solid currentColor;
+    animation: onda 3.2s ease-out infinite;
+}
+
+.stage-bg__edge::after {
+    animation-delay: 1.6s; /* la segunda onda sale a mitad de la primera */
+}
+
+
+/* --------------------------------- */
+/* --// animaciones del fondo \\-- */
+/* --------------------------------- */
+
+@keyframes rejilla-plana {
+    to {
+        background-position: 50px 50px;
+    }
+    /* mismo valor que el tamaño de cuadro */
+}
+
+@keyframes onda {
+    from {
+        transform: scale(1);
+        opacity: .8;
+    }
+
+    to {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+}
+
+
+/* ----------------------------- */
+/* --// textos de estado \\-- */
+/* ----------------------------- */
 
 .stage-bg .gate__readout {
-    position: fixed; /* se quedan pegados como el encabezado */
+    position: fixed; /* se quedan pegados a la pantalla */
     opacity: .55;
     font-size: .8rem;
 }
 
-.stage-bg .gate__readout--top {
+.stage-bg .gate__readout--top { /* el de arriba sube con el scroll, igual que el encabezado */
     top: calc(var(--head-h) + .6rem); /* justo debajo del encabezado */
     right: 2rem;
     left: auto;
     text-align: right;
+    transform: translateY(calc(var(--despl-texto, 0) * -1px)); /* el JS mueve este valor */
 }
 
-.stage-bg .gate__readout--bottom {
+.stage-bg.is-animating .gate__readout--top {
+    transition: transform .3s ease; /* movimiento suave al aparecer con el mouse */
+}
+
+.stage-bg .gate__readout--bottom { /* el de abajo se queda fijo */
     bottom: 1rem;
     left: 2rem;
     right: auto;
@@ -1626,9 +1732,9 @@ html.is-locked .backdrop {
 }
 
 
-/* -------------------------------------------------- */
-/* --// partículas: cada sección tiene las suyas \\-- */
-/* -------------------------------------------------- */
+/* ------------------------------------------ */
+/* --// partículas de cada sección \\-- */
+/* ------------------------------------------ */
 
 .stage-bg:not([data-seccion="inicio"]) .gate__particle {
     width: auto;
@@ -1648,14 +1754,6 @@ html.is-locked .backdrop {
         content: "✦";
     }
 
-.stage-bg[data-seccion="recuerdos"] .gate__particle {
-    color: #ff4d6d;
-}
-
-    .stage-bg[data-seccion="recuerdos"] .gate__particle::before {
-        content: "♥";
-    }
-
 .stage-bg[data-seccion="creditos"] .gate__particle {
     color: var(--plat-1);
 }
@@ -1664,16 +1762,368 @@ html.is-locked .backdrop {
         content: "★";
     }
 
+/* Recuerdos mezcla cinco figuras que se repiten en ciclo */
 
-/* --------------------------------------------------------------------------- */
-/* --// easter eggs: monigote en Inicio, coche en Créditos (sin cambios) \\-- */
-/* --------------------------------------------------------------------------- */
+.stage-bg[data-seccion="recuerdos"] .gate__particle {
+    color: #ff4d6d; /* corazón rosa */
+}
 
-.stage-bg[data-seccion="inicio"] .bg__walker,
-.stage-bg[data-seccion="creditos"] .gate__car {
+    .stage-bg[data-seccion="recuerdos"] .gate__particle::before {
+        content: "♥";
+    }
+
+    .stage-bg[data-seccion="recuerdos"] .gate__particle:nth-child(5n + 1) {
+        color: var(--plat-1); /* flor platinada */
+    }
+
+        .stage-bg[data-seccion="recuerdos"] .gate__particle:nth-child(5n + 1)::before {
+            content: "✿";
+        }
+
+    .stage-bg[data-seccion="recuerdos"] .gate__particle:nth-child(5n + 2) {
+        color: var(--orange); /* sol naranja */
+    }
+
+        .stage-bg[data-seccion="recuerdos"] .gate__particle:nth-child(5n + 2)::before {
+            content: "☼";
+        }
+
+    .stage-bg[data-seccion="recuerdos"] .gate__particle:nth-child(5n + 3) {
+        color: var(--blue); /* nota musical azul */
+    }
+
+        .stage-bg[data-seccion="recuerdos"] .gate__particle:nth-child(5n + 3)::before {
+            content: "♪";
+        }
+
+    .stage-bg[data-seccion="recuerdos"] .gate__particle:nth-child(5n + 4) {
+        color: var(--plat-2); /* lente de cámara */
+    }
+
+        .stage-bg[data-seccion="recuerdos"] .gate__particle:nth-child(5n + 4)::before {
+            content: "◉";
+        }
+
+/* ----------------------------------------- */
+/* --// monigote que sale del portal \\-- */
+/* ----------------------------------------- */
+
+.stage-bg .bg__walker {
+    margin-left: -1.6vmin; /* centra al monigote sobre el portal */
+    animation: caminar 18s linear infinite, bob .5s ease-in-out infinite; /* sale de un portal y entra al otro */
+}
+
+
+/* ----------------------------------- */
+/* --// animación central \\-- */
+/* ----------------------------------- */
+
+.stage-bg__center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44vmin;
+    height: 44vmin;
+    translate: -50% -50%;
+    border-radius: 50%;
+    opacity: 0; /* invisible: aparece de vez en cuando */
+    animation: centro 16s ease-in-out 2s infinite; /* 16s = cada cuánto aparece; 2s = espera inicial */
+}
+
+    .stage-bg__center::before,
+    .stage-bg__center::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+    }
+
+.stage-bg__icon {
+    position: absolute;
+    display: none; /* cada sección muestra el suyo */
+}
+
+    .stage-bg__icon svg,
+    .stage-bg__viajero svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+
+/* ----------------------- */
+/* --// radar (Inicio) \\-- */
+/* ----------------------- */
+
+.stage-bg[data-seccion="inicio"] .stage-bg__center {
+    border: 2px solid rgba(42, 167, 255, .7);
+    background: radial-gradient(circle, transparent 0 30%, rgba(42, 167, 255, .45) 30.5% 31.5%, transparent 32% 62%, rgba(42, 167, 255, .45) 62.5% 63.5%, transparent 64%), /* círculos del radar */
+    linear-gradient(rgba(42, 167, 255, .4), rgba(42, 167, 255, .4)) center / 100% 1px no-repeat, /* línea horizontal */
+    linear-gradient(rgba(42, 167, 255, .4), rgba(42, 167, 255, .4)) center / 1px 100% no-repeat; /* línea vertical */
+    box-shadow: 0 0 30px rgba(42, 167, 255, .35), inset 0 0 30px rgba(42, 167, 255, .25);
+}
+
+    .stage-bg[data-seccion="inicio"] .stage-bg__center::before { /* barrido que gira */
+        inset: 0;
+        background: conic-gradient(from 0deg, transparent 70%, rgba(42, 167, 255, .6));
+        animation: spin 3s linear infinite;
+    }
+
+    .stage-bg[data-seccion="inicio"] .stage-bg__center::after { /* punto detectado */
+        top: 28%;
+        left: 64%;
+        width: 2.2vmin;
+        height: 2.2vmin;
+        background: var(--orange);
+        box-shadow: 0 0 14px var(--orange);
+        animation: blink 1.2s steps(2) infinite;
+    }
+
+
+/* --------------------------------- */
+/* --// rayos de idea (Ideas) \\-- */
+/* --------------------------------- */
+
+.stage-bg[data-seccion="ideas"] .stage-bg__center::before { /* rayos que giran despacio */
+    inset: -30%;
+    background: repeating-conic-gradient(rgba(255, 138, 31, .5) 0 5deg, transparent 5deg 18deg);
+    -webkit-mask-image: radial-gradient(circle, transparent 22%, #000 24%, transparent 62%);
+    mask-image: radial-gradient(circle, transparent 22%, #000 24%, transparent 62%);
+    animation: spin 20s linear infinite;
+}
+
+.stage-bg[data-seccion="ideas"] .stage-bg__center::after { /* luz que late */
+    inset: 30%;
+    background: radial-gradient(circle, rgba(255, 138, 31, .55), transparent 70%);
+    animation: breathe 1.6s ease-in-out infinite;
+}
+
+.stage-bg[data-seccion="ideas"] .stage-bg__icon--bulb { /* bombilla en el centro */
+    display: block;
+    z-index: 1;
+    inset: 28% 36%;
+    color: #ffd2a0;
+    filter: drop-shadow(0 0 12px var(--orange));
+}
+
+
+/* ------------------------------------- */
+/* --// visor de cámara (Recuerdos) \\-- */
+/* ------------------------------------- */
+
+.stage-bg[data-seccion="recuerdos"] .stage-bg__center {
+    --l: var(--plat-1); /* color del marco */
+    width: 58vmin;
+    height: 40vmin;
+    border-radius: 0;
+    background: /* las cuatro esquinas del visor */
+    linear-gradient(var(--l), var(--l)) top left / 34px 3px no-repeat, linear-gradient(var(--l), var(--l)) top left / 3px 34px no-repeat, linear-gradient(var(--l), var(--l)) top right / 34px 3px no-repeat, linear-gradient(var(--l), var(--l)) top right / 3px 34px no-repeat, linear-gradient(var(--l), var(--l)) bottom left / 34px 3px no-repeat, linear-gradient(var(--l), var(--l)) bottom left / 3px 34px no-repeat, linear-gradient(var(--l), var(--l)) bottom right / 34px 3px no-repeat, linear-gradient(var(--l), var(--l)) bottom right / 3px 34px no-repeat;
+    animation: centro 18s ease-in-out 2s infinite, enfocar 18s ease-in-out 2s infinite; /* aparece y enfoca */
+}
+
+    .stage-bg[data-seccion="recuerdos"] .stage-bg__center::before { /* anillo de enfoque */
+        top: 50%;
+        left: 50%;
+        width: 9vmin;
+        height: 9vmin;
+        translate: -50% -50%;
+        border: 2px solid var(--orange);
+        box-shadow: 0 0 12px var(--orange);
+    }
+
+    .stage-bg[data-seccion="recuerdos"] .stage-bg__center::after { /* flash de la foto */
+        inset: 0;
+        border-radius: 0;
+        background: rgba(255, 255, 255, .35);
+        opacity: 0;
+        animation: flash-foto 18s ease-in-out 2s infinite;
+    }
+
+
+/* ------------------------------------- */
+/* --// anillos de firma (Créditos) \\-- */
+/* ------------------------------------- */
+
+.stage-bg[data-seccion="creditos"] .stage-bg__center {
+    border: 2px solid rgba(238, 242, 246, .35);
+    box-shadow: 0 0 30px rgba(238, 242, 246, .2);
+}
+
+    .stage-bg[data-seccion="creditos"] .stage-bg__center::before { /* anillo azul que gira */
+        inset: 8%;
+        border: 3px dashed rgba(42, 167, 255, .7);
+        animation: spin 14s linear infinite;
+    }
+
+    .stage-bg[data-seccion="creditos"] .stage-bg__center::after { /* anillo naranja que gira al revés */
+        inset: 24%;
+        border: 3px dashed rgba(255, 138, 31, .7);
+        animation: spin 9s linear infinite reverse;
+    }
+
+.stage-bg[data-seccion="creditos"] .stage-bg__icon--star { /* estrella en el centro */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inset: 0;
+    font-size: 9vmin;
+    color: var(--plat-1);
+    text-shadow: 0 0 16px var(--plat-1);
+}
+
+
+/* ---------------------------------------- */
+/* --// objeto viajero entre portales \\-- */
+/* ---------------------------------------- */
+
+/* Sale del portal azul y entra al naranja. Sigue las posiciones de cada sección automáticamente */
+.stage-bg__viajero {
+    position: absolute;
+    display: none; /* en Inicio no se ve (ahí camina el monigote) */
+    width: 5vmin;
+    height: 5vmin;
+    translate: -50% -50%;
+    left: var(--az-x);
+    top: var(--az-y);
+    opacity: 0;
+    animation: viajero 7s ease-in-out infinite; /* 7s = cada cuánto viaja */
+}
+
+.stage-bg:not([data-seccion="inicio"]) .stage-bg__viajero {
     display: block;
 }
 
+.stage-bg__viajero span {
+    display: none; /* cada sección muestra el suyo */
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    line-height: 1;
+    filter: drop-shadow(0 0 8px currentColor);
+}
+
+.stage-bg[data-seccion="ideas"] .v-bulb {
+    display: block;
+    color: var(--orange);
+}
+/* bombilla */
+.stage-bg[data-seccion="recuerdos"] .v-heart {
+    display: block;
+    color: #ff4d6d;
+}
+/* corazón */
+.stage-bg[data-seccion="creditos"] .v-star {
+    display: block;
+    font-size: 5vmin;
+    color: var(--plat-1);
+}
+/* estrella */
+
+
+/* ------------------------------- */
+/* --// animaciones nuevas \\-- */
+/* ------------------------------- */
+
+@keyframes caminar { /* el monigote crece al salir del portal azul y se encoge al entrar al naranja */
+    0% {
+        transform: translateX(0) scale(.2);
+        opacity: 0;
+    }
+
+    5% {
+        transform: translateX(4vw) scale(1);
+        opacity: 1;
+    }
+
+    95% {
+        transform: translateX(96vw) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(100vw) scale(.2);
+        opacity: 0;
+    }
+}
+
+@keyframes centro { /* la animación central aparece, se queda un rato y desaparece */
+    0%, 4% {
+        opacity: 0;
+    }
+
+    12%, 38% {
+        opacity: 1;
+    }
+
+    46%, 100% {
+        opacity: 0;
+    }
+}
+
+@keyframes enfocar { /* el visor empieza grande y se cierra para enfocar */
+    0%, 6% {
+        scale: 1.35;
+    }
+
+    30%, 100% {
+        scale: 1;
+    }
+}
+
+@keyframes flash-foto { /* flash blanco justo antes de que el visor se vaya */
+    0%, 36% {
+        opacity: 0;
+    }
+
+    39% {
+        opacity: 1;
+    }
+
+    46%, 100% {
+        opacity: 0;
+    }
+}
+
+@keyframes viajero { /* de un portal al otro, girando */
+    0% {
+        left: var(--az-x);
+        top: var(--az-y);
+        scale: .1;
+        rotate: 0deg;
+        opacity: 0;
+    }
+
+    8% {
+        scale: 1;
+        opacity: 1;
+    }
+
+    42% {
+        left: var(--na-x);
+        top: var(--na-y);
+        scale: 1;
+        rotate: 360deg;
+        opacity: 1;
+    }
+
+    50%, 100% {
+        left: var(--na-x);
+        top: var(--na-y);
+        scale: .1;
+        rotate: 360deg;
+        opacity: 0;
+    }
+}
+
+
+
+/* ------------------------ */
+/* --// easter eggs \\-- */
+/* ------------------------ */
+
+.stage-bg[data-seccion="inicio"] .bg__walker,
+.stage-bg[data-seccion="creditos"] .gate__car { /* monigote en Inicio, coche en Créditos */
+    display: block;
+}
 
 
 /* --------------------------------------------- */

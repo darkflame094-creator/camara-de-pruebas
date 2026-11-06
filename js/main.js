@@ -246,14 +246,19 @@ function posicionarEncabezado() {
     const fijado = ratonArriba || menuAbierto;
     if (fijado !== estabaFijado) { /* movimiento suave solo cuando aparece o se va por el mouse */
         encabezado.classList.add('is-animating');
+        fondoSeccion.classList.add('is-animating'); /* los textos de estado también se mueven suave */
         clearTimeout(temporizador);
-        temporizador = setTimeout(() => encabezado.classList.remove('is-animating'), 350);
+        temporizador = setTimeout(() => {
+            encabezado.classList.remove('is-animating');
+            fondoSeccion.classList.remove('is-animating');
+        }, 350);
         estabaFijado = fijado;
     }
     const altura = encabezado.offsetHeight;
     const corrimiento = fijado ? 0 : Math.min(desplazamiento, altura);
     encabezado.style.setProperty('--desplazamiento', corrimiento);
     encabezado.classList.toggle('is-gone', corrimiento >= altura);
+    fondoSeccion.style.setProperty('--despl-texto', fijado ? 0 : desplazamiento); /* el texto de arriba sube con el scroll, igual que el encabezado */
 }
 
 /* ------------------------------------- */
@@ -398,9 +403,20 @@ function crearEscena(contenedor) {
 
 function crearFondoSeccion(contenedor) {
     contenedor.innerHTML =
-        '<div class="gate__grid"></div>' +
+        '<div class="gate__wall"></div>' + /* pared de paneles (arriba) */
+        '<div class="gate__grid"></div>' + /* suelo de cuadrícula */
+        '<div class="gate__scan"></div>' + /* línea de escaneo */
+        '<div class="stage-bg__center">' + /* animación central (cambia según la sección) */
+        '<span class="stage-bg__icon stage-bg__icon--bulb">' + OBJETOS_SVG.bombilla + '</span>' +
+        '<span class="stage-bg__icon stage-bg__icon--star">★</span>' +
+        '</div>' +
         '<div class="stage-bg__edge stage-bg__edge--blue"></div>' +
         '<div class="stage-bg__edge stage-bg__edge--orange"></div>' +
+        '<div class="stage-bg__viajero">' + /* objeto que viaja de un portal al otro */
+        '<span class="v-bulb">' + OBJETOS_SVG.bombilla + '</span>' +
+        '<span class="v-heart">' + OBJETOS_SVG.corazon + '</span>' +
+        '<span class="v-star">★</span>' +
+        '</div>' +
         '<p class="gate__readout gate__readout--top"></p>' +
         '<p class="gate__readout gate__readout--bottom"></p>' +
         '<div class="gate__car">' + OBJETOS_SVG.coche + '</div>' +
@@ -430,7 +446,7 @@ function actualizarFondoSeccion(id) {
 
 /* AVISO: esta clave está escrita en el código, así que cualquiera que sepa abrir las herramientas
    del navegador puede verla. Sirve como "cortina" para visitas casuales, no como seguridad real. */
-const CLAVE = 'proyecto2026'; /* la clave de acceso: cámbiala aquí */
+const CLAVE = '1234'; /* la clave de acceso: cámbiala aquí */
 
 function desbloquear() {
     try { sessionStorage.setItem('acceso', 'ok'); } catch (e) {} /* recuerda el acceso hasta cerrar la pestaña */
